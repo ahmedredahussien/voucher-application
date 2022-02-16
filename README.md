@@ -16,7 +16,8 @@ customers
 * [Dependencies](pip install pandas pyarrow s3fs==0.6.0 fsspec pyyaml)
 
 ```
-Install dependent modules  using (setup.py) under parent project voucherProject, depending on your install python version 2 or 3 run the following
+Install dependent modules  using (setup.py) under parent project voucherProject, 
+depending on your install python version 2 or 3 run the following
 > python setup.py install --user
 or
 > python3 setup.py install --user
