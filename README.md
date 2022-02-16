@@ -1,4 +1,4 @@
-# Voucher Churning Customer Reactivation - Python App
+## Voucher Churning Customer Reactivation - Python App
 
 The idea behind the project is to reactivate customers who left the platform and resume their
 order frequency. The Marketing Team approaches the problem by sending vouchers to
