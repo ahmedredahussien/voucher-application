@@ -2,3 +2,20 @@
 logfile_path: "./app.log"
 source_file_path: "sample_data/data.parquet.gzip"
 display_first_x_rows: 8
+mysql:
+  dburl: "mysql://root:123@127.0.0.1"
+  db_schemaname: "voucher"
+  create_voucher_db: "CREATE DATABASE IF NOT EXISTS voucher"
+  use_voucher_db: "USE voucher"
+  customer_table: "customer_fact"
+  voucher_table: "voucher_rank"
+  select_cust_query: "SELECT * FROM `customer_fact` limit 10"
+  rank_segements_query: >
+    SELECT * FROM (
+    select cf.voucher_amount, count(cf.voucher_amount) as voucher_count,
+    cf.frequent_segment , ROW_NUMBER () over ( partition by cf.frequent_segment order by count(cf.voucher_amount) desc) as frequent_voucher_rank,
+    cf.recency_segment ,  ROW_NUMBER () over ( partition by cf.recency_segment order by count(cf.voucher_amount) desc) as recency_voucher_rank
+    from customer_fact cf
+    group by cf.voucher_amount,cf.recency_segment,cf.frequent_segment
+    ) ranked_vouchers
+    where recency_voucher_rank = 1 or frequent_voucher_rank = 1

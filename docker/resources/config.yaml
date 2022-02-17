@@ -1,4 +1,0 @@
----
-logfile_path: "./app.log"
-source_file_path: "sample_data/data.parquet.gzip"
-display_first_x_rows: 8
