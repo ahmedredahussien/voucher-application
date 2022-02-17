@@ -1,0 +1,228 @@
+openapi: 3.0.1
+info:
+  title: Voucher Selection
+  description: API that will expose the most used voucher value for a particular customer
+    segment. To provide the most used voucher value for different customer groups
+    (segments).
+  termsOfService: http://swagger.io/terms/
+  contact:
+    email: ahmedredahussien@gmail.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.0
+externalDocs:
+  description: Dataset URL
+  url: https://dh-data-chef-hiring-test.s3.eu-central-1.amazonaws.com/data-eng/voucher-selector/data.parquet.gzip
+servers:
+- url: https://localhost:8080/v2
+- url: http://localhost:8080/v2
+tags:
+- name: Voucher and Customer
+  description: Everything about Customer Transactions and Segments
+  externalDocs:
+    description: Find out more
+    url: https://dh-data-chef-hiring-test.s3.eu-central-1.amazonaws.com/
+- name: voucher
+  description: Most Used Voucher Value for different customer groups (segments)
+paths:
+  /voucher:
+    post:
+      tags:
+      - voucher
+      summary: Return voucher according to customer segement
+      operationId: select_voucher
+      requestBody:
+        description: Request using customer transaction object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Customer'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/Customer'
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/xml:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Voucher'
+                x-content-type: application/xml
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Voucher'
+        "400":
+          description: Invalid segment value
+          content: {}
+        "404":
+          description: No voucher returned for the customer segement
+          content: {}
+        "405":
+          description: Invalid input
+          content: {}
+      x-codegen-request-body-name: body
+      x-openapi-router-controller: swagger_server.controllers.voucher_controller
+  /voucher/findBySegment:
+    get:
+      tags:
+      - voucher
+      summary: Return voucher amount by customer segment
+      description: Return mostly used voucher value for customer segments
+      operationId: find_vouhcer_by_segment
+      parameters:
+      - name: customer_id
+        in: query
+        description: customer id
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+        example: 123
+      - name: country_code
+        in: query
+        description: customer’s country - currently the available country is Peru
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+          default: Peru
+      - name: last_order_ts
+        in: query
+        description: timestamp of the last order done by customer
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+          format: date-time
+        example: 2018-05-03 00:00:00
+      - name: first_order_ts
+        in: query
+        description: timestamp of the first order done by customer
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+          format: date-time
+        example: 2017-05-03 00:00:00
+      - name: total_orders
+        in: query
+        description: total orders done by customer
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: integer
+          format: int64
+        example: 15
+      - name: segment_name
+        in: query
+        description: which segment customer belongs to
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - recency_segment
+            - frequent_segment
+            default: recency_segment
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/xml:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Voucher'
+                x-content-type: application/xml
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Voucher'
+        "400":
+          description: Invalid segment value
+          content: {}
+        "404":
+          description: No voucher returned for the customer segement
+          content: {}
+      x-openapi-router-controller: swagger_server.controllers.voucher_controller
+components:
+  schemas:
+    Voucher:
+      type: object
+      properties:
+        vocher_amount:
+          type: integer
+          format: int64
+      example:
+        vocher_amount: 0
+      xml:
+        name: Voucher
+    Customer:
+      type: object
+      properties:
+        customer_id:
+          type: integer
+          format: int64
+          example: 123
+        country_code:
+          type: string
+          example: Peru
+        last_order_ts:
+          type: string
+          format: date-time
+        first_order_ts:
+          type: string
+          format: date-time
+        total_orders:
+          type: integer
+          format: int64
+          example: 15
+        segment_name:
+          type: string
+          example: recency_segment
+      xml:
+        name: Customer
+    Segment:
+      type: object
+      properties:
+        frequent_segment:
+          type: string
+          description: number of orders for customer
+          enum:
+          - 0-4
+          - 5-13
+          - 13-37
+        recency_segment:
+          type: string
+          description: days since last customer order by a customer
+          enum:
+          - 30-60
+          - 60-90
+          - 90-120
+          - 120-180
+          - 180+
+      xml:
+        name: Segment
+  securitySchemes:
+    api_key:
+      type: apiKey
+      name: api_key
+      in: header
+      x-apikeyInfoFunc: swagger_server.controllers.authorization_controller.check_api_key
+

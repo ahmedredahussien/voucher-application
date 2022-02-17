@@ -10,5 +10,5 @@ setup(
    packages=['src/main'],
    package_data={'src/main': ['*.yaml']},
    include_package_data=True,
-   install_requires=['pandas','pyarrow', 's3fs==0.6.0','fsspec','pyyaml'], #external packages as dependencies
+   install_requires=['pandas','pyarrow', 's3fs==0.6.0','fsspec','pyyaml','fastapi','uvicorn[standard]','sqlalchemy'], #external packages as dependencies
 )

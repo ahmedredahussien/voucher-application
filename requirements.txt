@@ -1,0 +1,10 @@
+pandas
+pyarrow
+s3fs==0.6.0
+fsspec
+pyyaml
+fastapi
+uvicorn[standard]
+sqlalchemy
+pymysql
+mysql
