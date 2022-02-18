@@ -137,7 +137,7 @@ from upper Menu --> VCS -->  Get from Version Control --> copy the github reposi
 pycharm
 ```
 git download : https://git-scm.com/downloads
-python >3+ : https://www.python.org/downloads/
+python >= 3+ : https://www.python.org/downloads/
 ```
 
 ### Docker Images Building
