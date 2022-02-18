@@ -8,6 +8,7 @@
 </div>
   
 <!-- TABLE OF CONTENTS -->
+<a name="TOP"></a>
 <details>
   <summary>Table of Contents</summary>
   <ol>
@@ -44,6 +45,7 @@
 </details>
 
 ## About The Project
+[Back to Top "Table of Contents"](#TOP)
 **Voucher Churning Customer Reactivation - Python App**
 - The idea behind the project is to reactivate customers who left the platform and resume their
 order frequency. The Marketing Team approaches the problem by sending vouchers to
@@ -63,13 +65,13 @@ customers
    * [Google colab Notebook](https://colab.research.google.com/drive/18_c5cS3fHxeIuwoAPH5aCXXawr2V9WUP?usp=sharing)
 
 ## Getting Started
-
+[Back to Top "Table of Contents"](#TOP)
 ### Prerequisites 
 
 - Python Dependency Modules Installation 'pandas','pyarrow','s3fs==0.6.0','fsspec','pyyaml','fastapi','uvicorn[standard]','sqlalchemy','pymysql','mysql-connector-python','mysqlclient'
 * [Dependencies](pip install -r all_requirements.txt)
 
-#### Project Hierarchy 
+### Project Hierarchy 
 * **setup.py**
 * **all_requirements.txt** : contains all python modules need to run the voucher python app and fastapi
 * **src**
@@ -107,6 +109,7 @@ or
 
 
 ## Notebook 
+[Back to Top "Table of Contents"](#TOP)
 **Notebook for data preparation and analysis**
 * [You can view the published Google Notebook on google cloud](https://colab.research.google.com/drive/18_c5cS3fHxeIuwoAPH5aCXXawr2V9WUP?usp=sharing)
 
@@ -115,7 +118,7 @@ if you need further permission to edit please contact me ahmedredahussien@gmail.
 ---
 
 ## Docker and Usage
-
+[Back to Top "Table of Contents"](#TOP)
 To build the docker for the first time and run the application along with the REST API
 
 You can download IDE "Integrated development environment" software application like Pycharm Intellij community free edition: **https://www.jetbrains.com/pycharm/download/**   
@@ -150,21 +153,22 @@ from upper Menu --> VCS -->  Get from Version Control --> copy the github reposi
 7. If you like to run the docker contain in a detach mode in background (Not recommended option - to be able to the status of the logtrace)
 ``docker compose up -d``
 8. Wait until the docker containers starts
-    8.1. mysql-server-container, fastapi-python-app, mysql-php-admin,voucher-python-app)
+    1. mysql-server-container, fastapi-python-app, mysql-php-admin,voucher-python-app)
 9. On-startup the voucher-python-app container will start the voucher python application pipline and output results will be insterted into mysql database
 10. Once you see the application execution finished successfully and ended with exit 0 "voucher-python-app exited with code 0", you can test the Fast REST API through its url
 11. FastAPI has an interface which facilitates request and response user experience URL : 
 ``http://127.0.0.1:8000/docs``
 ---
 ## Information
-
+[Back to Top "Table of Contents"](#TOP)
 ### FastAPI Testing
 12. FastAPI is a Web framework for developing RESTful APIs in Python https://fastapi.tiangolo.com/. FastAPI is based on Pydantic and type hints to validate, serialize, and deserialize data, and automatically auto-generate OpenAPI documents. It fully supports asynchronous programming and can run with Uvicorn and Gunicorn, Uvicorn as one of the fastest Python frameworks available 
 13. Open the resource url /voucher/ post verb method --> click on Try it out button --> copy and paste your json sample or modify the exisiting one 
 14. Scroll down and you will see the response section and voucher_amount response value for the requested customer segment type
 15. Alternative to FastAPI UI, is using native application or browser plugin for Postman tool, 
-    15.1. download native app from : https://www.postman.com/downloads/
-    15.2. download plugin from browser's Extensions plugins 
+    1. download native app from : https://www.postman.com/downloads/
+    2. download plugin from browser's Extensions plugins     
+        
 ---
 ### MySQL Voucher Database 
 16. Backend database is mysql, all wrangled data is persisted into MySQL for API exposure, future analysis and visualization
