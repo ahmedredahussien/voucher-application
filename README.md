@@ -150,7 +150,7 @@ from upper Menu --> VCS -->  Get from Version Control --> copy the github reposi
 7. If you like to run the docker contain in a detach mode in background (Not recommended option - to be able to the status of the logtrace)
 ``docker compose up -d``
 8. Wait until the docker containers starts
-8.1. mysql-server-container, fastapi-python-app, mysql-php-admin,voucher-python-app)
+    8.1. mysql-server-container, fastapi-python-app, mysql-php-admin,voucher-python-app)
 9. On-startup the voucher-python-app container will start the voucher python application pipline and output results will be insterted into mysql database
 10. Once you see the application execution finished successfully and ended with exit 0 "voucher-python-app exited with code 0", you can test the Fast REST API through its url
 11. FastAPI has an interface which facilitates request and response user experience URL : 
@@ -163,8 +163,8 @@ from upper Menu --> VCS -->  Get from Version Control --> copy the github reposi
 13. Open the resource url /voucher/ post verb method --> click on Try it out button --> copy and paste your json sample or modify the exisiting one 
 14. Scroll down and you will see the response section and voucher_amount response value for the requested customer segment type
 15. Alternative to FastAPI UI, is using native application or browser plugin for Postman tool, 
-15.1. download native app from : https://www.postman.com/downloads/
-15.2. download plugin from browser's Extensions plugins 
+    15.1. download native app from : https://www.postman.com/downloads/
+    15.2. download plugin from browser's Extensions plugins 
 ---
 ### MySQL Voucher Database 
 16. Backend database is mysql, all wrangled data is persisted into MySQL for API exposure, future analysis and visualization
