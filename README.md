@@ -91,9 +91,12 @@ or
 > python3 <args>
 ```
 ---
-**Execution steps for Voucher Python App**
+- **Execution steps for Voucher Python App**
+
 `` > python3 src\app\voucher_data_preparation.py ``
-**Execution steps for FastAPI**
+
+- **Execution steps for FastAPI**
+
 `` > uvicorn src\api\voucher_data_preparation:app ``
 
 
