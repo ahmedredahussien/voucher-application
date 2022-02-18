@@ -13,6 +13,9 @@
   <ol>
     <li>
       <a href="#about-the-project">About The Project</a>
+       <ul>
+        <li><a href="#presentation">Presentation</a></li>
+      </ul>
     </li>
     <li>
       <a href="#getting-started">Getting Started</a>
@@ -23,7 +26,6 @@
       </ul>
     </li>
     <li><a href="#notebook">Notebook</a></li>
-    <li><a href="#presentation">Presentation</a></li>
     <li>
         <a href="#docker-and-usage">Docker and Usage</a>
         <ul>
@@ -46,6 +48,10 @@
 - The idea behind the project is to reactivate customers who left the platform and resume their
 order frequency. The Marketing Team approaches the problem by sending vouchers to
 customers based on specific rules and customer attributes
+
+### Presentation
+**PowerPoint Presentation**
+* [Churning Customer Reactivation](https://docs.google.com/presentation/d/1JESapE-7auJNW6evjp1srvGhA9TarUPn/edit?usp=sharing&ouid=109467200517397620113&rtpof=true&sd=true)
 
 ---
 ### Build From
@@ -107,10 +113,6 @@ or
 if you need further permission to edit please contact me ahmedredahussien@gmail.com 
 
 ---
-
-## Presentation
-**PowerPoint Presentation**
-* [Churning Customer Reactivation](https://docs.google.com/presentation/d/1JESapE-7auJNW6evjp1srvGhA9TarUPn/edit?usp=sharing&ouid=109467200517397620113&rtpof=true&sd=true)
 
 ## Docker and Usage
 
