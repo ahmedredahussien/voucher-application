@@ -121,7 +121,7 @@ if you need further permission to edit please contact me ahmedredahussien@gmail.
 To build the docker for the first time and run the application along with the REST API
 
 You can download IDE "Integrated development environment" software application like Pycharm Intellij community free edition: **https://www.jetbrains.com/pycharm/download/**   
-
+You must download docker on you machine to be able to build the images following the installation steps : **https://www.docker.com/products/docker-desktop**
 ---
 
 ### Code download
