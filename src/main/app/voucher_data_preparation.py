@@ -40,11 +40,11 @@ class CustomerVoucher:
 
     """###################### Read and load Row Data into Dataframe ##########################"""
 
-    """
-    read parquet compressed file as gzip and loading it into panda's dataframe 
-    """
-
     def read_parquet(self, file_url):
+        """
+            Read parquet compressed file as gzip and loading it into panda's dataframe
+            :param Absolute path of s3 parquet file location
+        """
         df = pd.read_parquet(file_url, engine='pyarrow')
         logging.debug(
             'DataFrame INFO: (Column Index,Column Name,Number of Records,Column Data Type). Then summary of datatypes used, memory')
@@ -55,11 +55,13 @@ class CustomerVoucher:
 
     """################ Data Cleansing Stage 1 ####################"""
 
-    """
-    drop null rows, remove duplicated and filtering using Peru as predicate 
-    """
+
 
     def cleanup(self, df):
+        """
+            Drop null rows, remove duplicated and filtering using Peru as predicate
+            :param dataframe for cleansing
+        """
         logging.debug('DROP NULL records, Duplicates and Keep only Peru country_code')
         query_condition = "country_code=='Peru'"
         df = df.dropna().drop_duplicates().query(query_condition)
@@ -72,6 +74,10 @@ class CustomerVoucher:
     """################ Data Types Conversion and Cleansing Stage 2 ####################"""
 
     def adjust_schema_datatypes(self, df):
+        """
+            Converting dataframe data types to match data values and Cleansing Stage 2
+            :param dataframe for converting its fields and cleansing
+        """
         logging.debug(
             'Convert data type and masking/replacing incompatible types by null then removing those null values')
         logging.info('CONVERT_COLUMNS_DATATYPES_&_REMOVING_INCOMPATIBLE_TYPES')
@@ -116,6 +122,10 @@ class CustomerVoucher:
     """########### Display Sample Data ###############"""
 
     def display_sample_data(self, df):
+        """
+            Displat first x rows of dataframe
+            :param dataframe to display
+        """
         logging.debug("DATASET_LATEST_COUNT=%s", df.shape)
         logging.debug("DISPLAYING_FIRST=%s of the Dataset", self.display_first_x_rows)
 
@@ -136,6 +146,10 @@ class CustomerVoucher:
     """############ Validation for data issues ################"""
 
     def validate_data(self, df):
+        """
+            Validate columns value making sure its free from null and can be converted without errors
+            :param dataframe to validate
+        """
         print(df.info)
 
         timestamp = df['timestamp']
@@ -161,16 +175,21 @@ class CustomerVoucher:
     """############## Enrich Data with Segments (recency, frequent) #############"""
 
     def enrich_data_with_segments(self, df):
+        """
+            Adding 2 new columns to dataframe with which are calculated fields for  frequent_segment and recency_segment
+            :param dataframe to enrich
+        """
         df['frequent_segment'] = self.convert_to_str(
-            df.apply(lambda row: CommonUtils.get_frequent_segment(CommonUtils,row['total_orders']), axis=1))
+            df.apply(lambda row: CommonUtils.get_frequent_segment(CommonUtils, row['total_orders']), axis=1))
         df['recency_segment'] = self.convert_to_str(
-            df.apply(lambda row: CommonUtils.get_recency_segment(CommonUtils,row['last_order_ts'], row['first_order_ts']), axis=1))
+            df.apply(
+                lambda row: CommonUtils.get_recency_segment(CommonUtils, row['last_order_ts'], row['first_order_ts']),
+                axis=1))
 
         print(df.info())
         logging.info(df.info)
         logging.info("DATASET_COUNT=%s", df.shape)
         return df
-
 
     """########## Simulate Sample Request - not used ###############"""
 
@@ -204,6 +223,9 @@ class CustomerVoucher:
     """########## Save into dayabase ###############"""
 
     def init_con_engine(self):
+        """
+            Sqlalchemy connection instance initialization, using URL from yaml config file
+        """
         from sqlalchemy import create_engine
         print("create_engine_url={0}".format(self.dburl))
         logging.debug("create_engine_url={0}".format(self.dburl))
@@ -211,16 +233,21 @@ class CustomerVoucher:
         return engine
 
     def persist_df(self, df, engine):
-
+        """
+            Adding 2 new columns to dataframe with which are calculated fields for  recency_segment and recency_segment
+            :param dataframe to save into database
+            :param engine is connection instance to connect to mysql database
+        """
         try:
             print("create_voucher_db={0},use_voucher_db={1},customer_table={2},db_schemaname={3},select_cust_query={4}"
                   .format(self.create_voucher_db, self.use_voucher_db,
                           self.customer_table, self.db_schemaname,
                           self.select_cust_query))
-            logging.debug("create_voucher_db={0},use_voucher_db={1},customer_table={2},db_schemaname={3},select_cust_query={4}"
-                  .format(self.create_voucher_db, self.use_voucher_db,
-                          self.customer_table, self.db_schemaname,
-                          self.select_cust_query))
+            logging.debug(
+                "create_voucher_db={0},use_voucher_db={1},customer_table={2},db_schemaname={3},select_cust_query={4}"
+                .format(self.create_voucher_db, self.use_voucher_db,
+                        self.customer_table, self.db_schemaname,
+                        self.select_cust_query))
 
             engine.execute(self.create_voucher_db)  # create db
             engine.execute(self.use_voucher_db)
@@ -246,6 +273,11 @@ class CustomerVoucher:
             print(e)
 
     def rank_segments_by_voucher_count(self, engine):
+        """
+            Calculate the most used voucher per each segment (frequent_segment and recency_segment),
+            executing ranking query and saving dataframe into database
+            :param engine is connection instance to connect to mysql database and save results
+        """
         # top ranked voucher amount most used per segment
         query = self.rank_segements_query
         df = pd.read_sql(query, engine)
