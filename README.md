@@ -149,7 +149,7 @@ from upper Menu --> VCS -->  Get from Version Control --> copy the github reposi
 ``docker compose up``
 7. If you like to run the docker contain in a detach mode in background (Not recommended option - to be able to the status of the logtrace)
 ``docker compose up -d``
-8. Wait until the docker containers starts 
+8. Wait until the docker containers starts
 8.1. mysql-server-container, fastapi-python-app, mysql-php-admin,voucher-python-app)
 9. On-startup the voucher-python-app container will start the voucher python application pipline and output results will be insterted into mysql database
 10. Once you see the application execution finished successfully and ended with exit 0 "voucher-python-app exited with code 0", you can test the Fast REST API through its url
