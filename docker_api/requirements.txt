@@ -1,0 +1,6 @@
+pyyaml
+fastapi
+uvicorn[standard]
+sqlalchemy
+mysql-connector-python
+mysqlclient

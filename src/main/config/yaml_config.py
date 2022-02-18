@@ -15,7 +15,7 @@ class YamlConfig:
             return ldap_config
 
     @staticmethod
-    def get_config(self):
+    def get_config():
         yaml_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../resources/config.yaml')
         print("yaml_file_path=" + yaml_file_path)
         config_dict = YamlConfig.load_yaml(yaml_file_path)

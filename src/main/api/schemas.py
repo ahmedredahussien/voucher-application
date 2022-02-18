@@ -10,7 +10,6 @@ class CustomerBase(BaseModel):
     last_order_ts: datetime.datetime
     first_order_ts: datetime.datetime
     total_orders: int
-    voucher_amount: int
     segment: str
 
     class Config:

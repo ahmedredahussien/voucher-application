@@ -19,7 +19,8 @@ WORKDIR ${WORKDIR}
 ADD . $WORKDIR
 
 # Install dependencies: COPY source-local-machine destination-container
-RUN pip install -r $WORKDIR/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r $WORKDIR/docker_voucher/requirements.txt
+
 
 # Run the application:
-CMD ["python", "voucher_data_preparation.py"]
+CMD ["python", "src/main/app/voucher_data_preparation.py"]

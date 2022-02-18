@@ -2,14 +2,16 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from src.main.app.yaml_config import YamlConfig
+from src.main.config.yaml_config import YamlConfig
 
 config_dict = YamlConfig.get_config()
 
 #db url
-SQLALCHEMY_DATABASE_URL = config_dict['mysql']['dburl']
+MYSQL_DATABASE_URL = config_dict['mysql']['dburl']
+DATABASE_SCHEMA = config_dict['mysql']['db_schemaname']
+SQLALCHEMY_DATABASE_URL = MYSQL_DATABASE_URL + "/" + DATABASE_SCHEMA
 # SQLALCHEMY_DATABASE_URL = "postgresql://user:password@postgresserver/db"
-
+print("SQLALCHEMY_DATABASE_URL="+SQLALCHEMY_DATABASE_URL)
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL
 )

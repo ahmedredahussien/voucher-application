@@ -1,9 +1,9 @@
 ---
-logfile_path: "./app.log"
+logfile_path: "app.log"
 source_file_path: "sample_data/data.parquet.gzip"
 display_first_x_rows: 8
 mysql:
-  dburl: "mysql://root:123@127.0.0.1"
+  dburl: "mysql://root:123@mysql_db"
   db_schemaname: "voucher"
   create_voucher_db: "CREATE DATABASE IF NOT EXISTS voucher"
   use_voucher_db: "USE voucher"

@@ -5,19 +5,19 @@ from sqlite3.dbapi2 import OperationalError
 
 import pandas as pd
 
-# import sys
-# import os.path
-# sys.path.append(
-# os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
+sys.path.insert(1, os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
+from config.yaml_config import YamlConfig
+from common.common_utils import CommonUtils
 
-from yaml_config import YamlConfig
+
+# from yaml_config import YamlConfig
 
 
 class CustomerVoucher:
     """################# Initialize variables and logging#######################"""
 
     def __init__(self):
-        config_dict = YamlConfig.get_config(self)
+        config_dict = YamlConfig.get_config()
         app_log_file = config_dict["logfile_path"]
 
         logging.basicConfig(filename=app_log_file, filemode='w', format='%(name)s - %(levelname)s - %(message)s',
@@ -162,60 +162,15 @@ class CustomerVoucher:
 
     def enrich_data_with_segments(self, df):
         df['frequent_segment'] = self.convert_to_str(
-            df.apply(lambda row: self.get_frequent_segment(row['total_orders']), axis=1))
+            df.apply(lambda row: CommonUtils.get_frequent_segment(CommonUtils,row['total_orders']), axis=1))
         df['recency_segment'] = self.convert_to_str(
-            df.apply(lambda row: self.get_recency_segment(row['last_order_ts'], row['first_order_ts']), axis=1))
+            df.apply(lambda row: CommonUtils.get_recency_segment(CommonUtils,row['last_order_ts'], row['first_order_ts']), axis=1))
 
         print(df.info())
         logging.info(df.info)
         logging.info("DATASET_COUNT=%s", df.shape)
         return df
 
-    # helper functions
-    def subtract_last_first_trans_day(self, last_order_ts, first_order_ts):
-        diff_in_days = last_order_ts - first_order_ts  # timedelta datatype is returned
-        return diff_in_days.days
-
-    @staticmethod
-    def get_recency_segment_by_days(self, diff_in_days):
-        recency_segment = ""
-
-        # assuption for cases where difference in days less than 30 as it was missing from requirement
-        if diff_in_days >= 0 and diff_in_days < 30:
-            recency_segment = "30-"
-        elif diff_in_days >= 30 and diff_in_days < 60:
-            recency_segment = "30-60"
-        elif diff_in_days >= 60 and diff_in_days < 90:
-            recency_segment = "60-90"
-        elif diff_in_days >= 90 and diff_in_days < 120:
-            recency_segment = "90-120"
-        elif diff_in_days >= 120 and diff_in_days < 180:
-            recency_segment = "120-180"
-        elif diff_in_days >= 180:
-            recency_segment = "180+"
-        return recency_segment
-
-    @staticmethod
-    def get_recency_segment(self, last_order_ts, first_order_ts):
-        diff_in_days = self.subtract_last_first_trans_day(last_order_ts, first_order_ts)
-        recency_segment = self.get_recency_segment_by_days(diff_in_days)
-
-        return recency_segment
-
-    @staticmethod
-    def get_frequent_segment(self,total_orders):
-        frequent_segment = ""
-
-        if total_orders >= 0 and total_orders <= 4:
-            frequent_segment = "0-4"
-        elif total_orders >= 5 and total_orders < 13:
-            frequent_segment = "5-13"
-        elif total_orders >= 13 and total_orders < 37:
-            frequent_segment = "13-37"
-        # assuption for cases where difference in days total orders more than 37 as it was missing from requirement
-        elif total_orders >= 37:
-            frequent_segment = "37+"
-        return frequent_segment
 
     """########## Simulate Sample Request - not used ###############"""
 
@@ -235,8 +190,8 @@ class CustomerVoucher:
         diff_in_days = (dfSampleRequest.last_order_ts - dfSampleRequest.first_order_ts).dt.days
         diff_in_days = (diff_in_days.values)
 
-        recency_segment = self.get_recency_segment_by_days(diff_in_days)
-        frequent_segment = self.get_frequent_segment(dfSampleRequest["total_orders"].values)
+        recency_segment = CommonUtils.get_recency_segment_by_days(diff_in_days)
+        frequent_segment = CommonUtils.get_frequent_segment(dfSampleRequest["total_orders"].values)
 
         print(recency_segment)
         print(frequent_segment)
@@ -250,12 +205,23 @@ class CustomerVoucher:
 
     def init_con_engine(self):
         from sqlalchemy import create_engine
+        print("create_engine_url={0}".format(self.dburl))
+        logging.debug("create_engine_url={0}".format(self.dburl))
         engine = create_engine(self.dburl)
         return engine
 
     def persist_df(self, df, engine):
 
         try:
+            print("create_voucher_db={0},use_voucher_db={1},customer_table={2},db_schemaname={3},select_cust_query={4}"
+                  .format(self.create_voucher_db, self.use_voucher_db,
+                          self.customer_table, self.db_schemaname,
+                          self.select_cust_query))
+            logging.debug("create_voucher_db={0},use_voucher_db={1},customer_table={2},db_schemaname={3},select_cust_query={4}"
+                  .format(self.create_voucher_db, self.use_voucher_db,
+                          self.customer_table, self.db_schemaname,
+                          self.select_cust_query))
+
             engine.execute(self.create_voucher_db)  # create db
             engine.execute(self.use_voucher_db)
             # default
