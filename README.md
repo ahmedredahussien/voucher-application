@@ -49,6 +49,7 @@
 - The idea behind the project is to reactivate customers who left the platform and resume their
 order frequency. The Marketing Team approaches the problem by sending vouchers to
 customers based on specific rules and customer attributes
+
 [Back to Top "Table of Contents"](#TOP)
 
 ### Presentation
@@ -161,7 +162,7 @@ from upper Menu --> VCS -->  Get from Version Control --> copy the github reposi
 
 ---
 ## Information
-[Back to Top "Table of Contents"](#TOP)
+
 ### FastAPI Testing
 12. FastAPI is a Web framework for developing RESTful APIs in Python https://fastapi.tiangolo.com/. FastAPI is based on Pydantic and type hints to validate, serialize, and deserialize data, and automatically auto-generate OpenAPI documents. It fully supports asynchronous programming and can run with Uvicorn and Gunicorn, Uvicorn as one of the fastest Python frameworks available 
 13. Open the resource url /voucher/ post verb method --> click on Try it out button --> copy and paste your json sample or modify the exisiting one 
@@ -177,7 +178,7 @@ from upper Menu --> VCS -->  Get from Version Control --> copy the github reposi
 17. Using any analysis and monitoring tools for Data quality  like Kibana, Graphana
 18. Using  BI tool PowerBI, Tableau, Superset
 19. Moreover for infrastructure monitoring using DataDog 
-20. Using DBeaver software on your machine you can query  the voucher database using native SQL 
+20. Using DBeaver software community edition on your machine you can query  the voucher database using native SQL : **https://dbeaver.io/download/** 
 **Customer transaction table along with 2 enriched columns for segments classification category table : voucher.customer_fact** 
 
 ```
