@@ -45,11 +45,11 @@
 </details>
 
 ## About The Project
-[Back to Top "Table of Contents"](#TOP)
 **Voucher Churning Customer Reactivation - Python App**
 - The idea behind the project is to reactivate customers who left the platform and resume their
 order frequency. The Marketing Team approaches the problem by sending vouchers to
 customers based on specific rules and customer attributes
+[Back to Top "Table of Contents"](#TOP)
 
 ### Presentation
 **PowerPoint Presentation**
@@ -65,7 +65,7 @@ customers
    * [Google colab Notebook](https://colab.research.google.com/drive/18_c5cS3fHxeIuwoAPH5aCXXawr2V9WUP?usp=sharing)
 
 ## Getting Started
-[Back to Top "Table of Contents"](#TOP)
+
 ### Prerequisites 
 
 - Python Dependency Modules Installation 'pandas','pyarrow','s3fs==0.6.0','fsspec','pyyaml','fastapi','uvicorn[standard]','sqlalchemy','pymysql','mysql-connector-python','mysqlclient'
@@ -106,19 +106,17 @@ or
 - **Execution steps for FastAPI**
 
 `` > uvicorn src\api\voucher_data_preparation:app ``
-
+[Back to Top "Table of Contents"](#TOP)
 
 ## Notebook 
-[Back to Top "Table of Contents"](#TOP)
 **Notebook for data preparation and analysis**
 * [You can view the published Google Notebook on google cloud](https://colab.research.google.com/drive/18_c5cS3fHxeIuwoAPH5aCXXawr2V9WUP?usp=sharing)
 
 if you need further permission to edit please contact me ahmedredahussien@gmail.com 
-
+[Back to Top "Table of Contents"](#TOP)
 ---
 
 ## Docker and Usage
-[Back to Top "Table of Contents"](#TOP)
 To build the docker for the first time and run the application along with the REST API
 
 You can download IDE "Integrated development environment" software application like Pycharm Intellij community free edition: **https://www.jetbrains.com/pycharm/download/**   
@@ -158,6 +156,9 @@ from upper Menu --> VCS -->  Get from Version Control --> copy the github reposi
 10. Once you see the application execution finished successfully and ended with exit 0 "voucher-python-app exited with code 0", you can test the Fast REST API through its url
 11. FastAPI has an interface which facilitates request and response user experience URL : 
 ``http://127.0.0.1:8000/docs``
+
+[Back to Top "Table of Contents"](#TOP)
+
 ---
 ## Information
 [Back to Top "Table of Contents"](#TOP)
@@ -203,3 +204,4 @@ where recency_voucher_rank = 1 or frequent_voucher_rank = 1
 select * from voucher.voucher_rank 
 
 ```
+[Back to Top "Table of Contents"](#TOP)
