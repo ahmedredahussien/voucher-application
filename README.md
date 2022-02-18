@@ -179,18 +179,18 @@ from upper Menu --> VCS -->  Get from Version Control --> copy the github reposi
 18. Using  BI tool PowerBI, Tableau, Superset
 19. Moreover for infrastructure monitoring using DataDog 
 20. Using DBeaver software community edition on your machine you can query  the voucher database using native SQL : **https://dbeaver.io/download/** 
-**Customer transaction table along with 2 enriched columns for segments classification category table : voucher.customer_fact** 
+
+    1. **Customer transaction table along with 2 enriched columns for segments classification table : voucher.customer_fact** 
 
 ```
-
 select * from voucher.customer_fact limit 30
 select count(*) from voucher.customer_fact 
-
 ```
-**Voucher query for ranking most used voucher per each segment - final result is already saved from python code in : voucher.voucher_rank table** 
-
+-
+    2. **Voucher query for ranking most used voucher per each segment - 
+    final result is already saved from python code in : voucher.voucher_rank table**
+     
 ```
-
 SELECT * FROM (
 select cf.voucher_amount, count(cf.voucher_amount) as cnt, 
 cf.frequent_segment, 
@@ -201,7 +201,6 @@ from voucher.customer_fact cf
 group by cf.voucher_amount,cf.recency_segment,cf.frequent_segment
 ) ranked_vouchers
 where recency_voucher_rank = 1 or frequent_voucher_rank = 1
-
 select * from voucher.voucher_rank 
 
 ```
