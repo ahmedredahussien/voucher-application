@@ -116,9 +116,21 @@ if you need further permission to edit please contact me ahmedredahussien@gmail.
 
 To build the docker for the first time and run the application along with the REST API
 
+You can download IDE "Integrated development environment" software application like Pycharm Intellij community free edition: **https://www.jetbrains.com/pycharm/download/**   
+
 ---
 
 ### Code download
+1. Clone the application repository **"https://github.com/ahmedredahussien/voucherProject"** to your machine using one of the 2 options below
+
+**using Option 1 Pycharm:** which has build in integration client with git : 
+from upper Menu --> VCS -->  Get from Version Control --> copy the github repository url into URL textbox option
+``https://github.com/ahmedredahussien/voucherProject.git``
+
+**using Option 2 cli command:** 
+``git clone https://github.com/ahmedredahussien/voucherProject.git voucher_project``
+
+
 1. You can download Pycharm IDE from intellij which has build in integration client with git : from upper Menu --> VCS -->  Get from Version Control 
 2. Or run the git command : git https://github.com/ahmedredahussien/voucherProject.git voucher_project
 * but make sure that in all cases that git is installed and python interpreter to run the unit tests
@@ -127,9 +139,6 @@ pycharm
 git download : https://git-scm.com/downloads
 python >3+ : https://www.python.org/downloads/
 ```
-3. Clone the application repository **"https://github.com/ahmedredahussien/voucherProject"** to your machine using git command on command line CLI or using Pycharm Intellij IDE
-cli command: 
-```git https://github.com/ahmedredahussien/voucherProject.git voucher_project```
 
 ### Docker Images Building
 4. Open command prompt terminal on your machine 
