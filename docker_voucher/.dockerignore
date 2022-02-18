@@ -1,0 +1,6 @@
+README.md
+test
+.gitignore
+app.log
+venv
+python-flask-server-generated

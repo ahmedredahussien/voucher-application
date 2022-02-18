@@ -19,7 +19,7 @@ services:
       - app-tier
     volumes:
       - db_data:/var/lib/mysql
-      - "mysql_grant_permission.sql:/docker-entrypoint-initdb.d/1.sql"
+#      - "mysql_grant_permission.sql:/docker-entrypoint-initdb.d/1.sql"
 
   phpmyadmin:
     container_name: mysql-php-admin
@@ -73,4 +73,4 @@ networks:
 
 volumes:
   db_data:
-  mysql_grant_permission.sql:
+#  mysql_grant_permission.sql:

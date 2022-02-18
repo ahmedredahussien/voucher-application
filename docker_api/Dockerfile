@@ -18,7 +18,7 @@ WORKDIR ${WORKDIR}
 
 ADD . $WORKDIR
 
-# Install dependencies: COPY source-local-machine destination-container
+# Install dependencies:
 RUN pip install --no-cache-dir --upgrade -r $WORKDIR/docker_api/requirements.txt
 
 
