@@ -8,3 +8,4 @@ uvicorn[standard]
 sqlalchemy
 mysql-connector-python
 mysqlclient
+boto3

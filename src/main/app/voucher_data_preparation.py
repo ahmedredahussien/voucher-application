@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 from sqlite3.dbapi2 import OperationalError
+import boto3
 
 import pandas as pd
 
@@ -17,28 +18,71 @@ class CustomerVoucher:
     """################# Initialize variables and logging#######################"""
 
     def __init__(self):
-        config_dict = YamlConfig.get_config()
-        app_log_file = config_dict["logfile_path"]
+        try:
+            config_dict = YamlConfig.get_config()
+            app_log_file = config_dict["logfile_path"]
 
-        logging.basicConfig(filename=app_log_file, filemode='w', format='%(name)s - %(levelname)s - %(message)s',
-                            level=logging.DEBUG)
-        self.file_url = config_dict["source_file_path"]
-        self.display_first_x_rows = int(config_dict["display_first_x_rows"])
+            logging.basicConfig(filename=app_log_file, filemode='w', format='%(name)s - %(levelname)s - %(message)s',
+                                level=logging.DEBUG)
+            self.file_url = config_dict["source_file_path"]
+            self.display_first_x_rows = int(config_dict["display_first_x_rows"])
 
-        mysql_conf = config_dict["mysql"]
-        self.dburl = mysql_conf["dburl"]
-        self.db_schemaname = mysql_conf["db_schemaname"]
-        self.create_voucher_db = mysql_conf["create_voucher_db"]
-        self.use_voucher_db = mysql_conf["use_voucher_db"]
-        self.customer_table = mysql_conf["customer_table"]
-        self.voucher_table = mysql_conf["voucher_table"]
-        self.select_cust_query = mysql_conf["select_cust_query"]
-        self.rank_segements_query = mysql_conf["rank_segements_query"]
+            mysql_conf = config_dict["mysql"]
+            self.dburl = mysql_conf["dburl"]
+            self.db_schemaname = mysql_conf["db_schemaname"]
+            self.create_voucher_db = mysql_conf["create_voucher_db"]
+            self.use_voucher_db = mysql_conf["use_voucher_db"]
+            self.customer_table = mysql_conf["customer_table"]
+            self.voucher_table = mysql_conf["voucher_table"]
+            self.select_cust_query = mysql_conf["select_cust_query"]
+            self.rank_segements_query = mysql_conf["rank_segements_query"]
 
-        logging.info('FILE_PATH=%s', self.file_url)
-        logging.info('DISPLAY_THE_FIRST=%s OF DATAFRAME', self.display_first_x_rows)
+            logging.info('FILE_PATH=%s', self.file_url)
+            logging.info('DISPLAY_THE_FIRST=%s OF DATAFRAME', self.display_first_x_rows)
+
+        except KeyError as err:
+            print("KeyError error: {0}".format(err))
+            logging.error("KeyError error:=%s", err)
+        except ValueError as err:
+            print("Could not convert data to an integer: {0}".format(err))
+            logging.error("Could not convert data to an integer:=%s", err)
+        except BaseException as err:
+            print(f"Unexpected {err=}, {type(err)=}")
+            logging.error("BaseException:=%s", err)
+        except Exception as err:
+            print("General Exception: {0}".format(err))
+            logging.error("Exception:=%s", err)
+        else:
+            print("Initialization variables and logging finished successfully")
+            logging.debug("Initialization variables and logging finished successfully")
 
     """###################### Read and load Row Data into Dataframe ##########################"""
+
+    def download_parquet(self):
+        try:
+            print('FILE_PATH_TO_WRITE={0}'.format(self.file_url))
+
+            s3_client = boto3.client('s3', aws_access_key_id='', aws_secret_access_key='')
+            s3_client._request_signer.sign = (lambda *args, **kwargs: None)
+            obj = s3_client.get_object(Bucket='dh-data-chef-hiring-test', Key='data-eng/voucher-selector/data.parquet.gzip')
+            bytes_response = obj['Body'].read()
+
+            #write bytes into file
+            with open(self.file_url, "wb") as file_object:
+                file_object.write(bytes_response)
+
+            downloaded_file_size = os.path.getsize(self.file_url)
+            print('DOWNLOADED_FILE_SIZE={0}'.format(downloaded_file_size))
+            logging.info('DOWNLOADED_FILE_SIZE=%s',downloaded_file_size)
+            return True
+
+        except Exception as err:
+            print("download_parquet Exception: {0}".format(err))
+            logging.error("download_parquet Exception:=%s", err)
+            return False
+
+
+
 
     def read_parquet(self, file_url):
         """
@@ -290,6 +334,12 @@ class CustomerVoucher:
 if __name__ == '__main__':
     custvoucher = CustomerVoucher()
 
+    is_data_available = custvoucher.download_parquet()
+
+    if not is_data_available:
+        logging.debug("Exist Application - Dataset is not avaliable")
+        print("Exist Application - Dataset is not avaliable")
+        sys.exit(1)
     # Read and load Row Data into Dataframe
     df = custvoucher.read_parquet(custvoucher.file_url)
 
