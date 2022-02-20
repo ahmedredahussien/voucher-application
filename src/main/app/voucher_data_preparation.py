@@ -11,7 +11,12 @@ from config.yaml_config import YamlConfig
 from common.common_utils import CommonUtils
 
 
-# from yaml_config import YamlConfig
+class VoucherBusinessException(Exception):
+    """Exception Raised when there is an error in business logic layer in the implementation """
+
+    def __init__(self, message="Voucher Business Exception"):
+        self.message = message
+        super().__init__(self.message)
 
 
 class CustomerVoucher:
@@ -56,7 +61,7 @@ class CustomerVoucher:
             print("Initialization variables and logging finished successfully")
             logging.debug("Initialization variables and logging finished successfully")
 
-    """###################### Read and load Row Data into Dataframe ##########################"""
+    """###################### Download, Read and load Row Data into Dataframe ##########################"""
 
     def download_parquet(self):
         try:
@@ -64,16 +69,17 @@ class CustomerVoucher:
 
             s3_client = boto3.client('s3', aws_access_key_id='', aws_secret_access_key='')
             s3_client._request_signer.sign = (lambda *args, **kwargs: None)
-            obj = s3_client.get_object(Bucket='dh-data-chef-hiring-test', Key='data-eng/voucher-selector/data.parquet.gzip')
+            obj = s3_client.get_object(Bucket='dh-data-chef-hiring-test',
+                                       Key='data-eng/voucher-selector/data.parquet.gzip')
             bytes_response = obj['Body'].read()
 
-            #write bytes into file
+            # write bytes into file
             with open(self.file_url, "wb") as file_object:
                 file_object.write(bytes_response)
 
             downloaded_file_size = os.path.getsize(self.file_url)
             print('DOWNLOADED_FILE_SIZE={0}'.format(downloaded_file_size))
-            logging.info('DOWNLOADED_FILE_SIZE=%s',downloaded_file_size)
+            logging.info('DOWNLOADED_FILE_SIZE=%s', downloaded_file_size)
             return True
 
         except Exception as err:
@@ -81,39 +87,47 @@ class CustomerVoucher:
             logging.error("download_parquet Exception:=%s", err)
             return False
 
-
-
-
     def read_parquet(self, file_url):
         """
             Read parquet compressed file as gzip and loading it into panda's dataframe
             :param Absolute path of s3 parquet file location
         """
-        df = pd.read_parquet(file_url, engine='pyarrow')
-        logging.debug(
-            'DataFrame INFO: (Column Index,Column Name,Number of Records,Column Data Type). Then summary of datatypes used, memory')
-        print(df.info())
-        logging.info(df.info)
-        logging.info("DATASET_COUNT=%s", df.shape)
-        return df
+        try:
+            df = pd.read_parquet(file_url, engine='pyarrow')
+            logging.debug(
+                'DataFrame INFO: (Column Index,Column Name,Number of Records,Column Data Type). Then summary of datatypes used, memory')
+            print(df.info())
+            logging.info(df.info)
+            logging.info("DATASET_COUNT=%s", df.shape)
+
+        except Exception as err:
+            print("read_parquet Exception: {0}".format(err))
+            logging.error("read_parquet Exception:=%s", err)
+            raise VoucherBusinessException("Reading parquet failed from {0} URL, Exception: {1}".format(file_url,err))
+        else:
+            return df
 
     """################ Data Cleansing Stage 1 ####################"""
-
-
 
     def cleanup(self, df):
         """
             Drop null rows, remove duplicated and filtering using Peru as predicate
             :param dataframe for cleansing
         """
-        logging.debug('DROP NULL records, Duplicates and Keep only Peru country_code')
-        query_condition = "country_code=='Peru'"
-        df = df.dropna().drop_duplicates().query(query_condition)
-        print(df.info())
-        logging.info(df.info)
-        print(df.shape)
-        logging.info("DATASET_COUNT_AFTER_CLEANSING=%s", df.shape)
-        return df
+        try:
+            logging.debug('DROP NULL records, Duplicates and Keep only Peru country_code')
+            query_condition = "country_code=='Peru'"
+            df = df.dropna().drop_duplicates().query(query_condition)
+            print(df.info())
+            logging.info(df.info)
+            print(df.shape)
+            logging.info("DATASET_COUNT_AFTER_CLEANSING=%s", df.shape)
+        except Exception as err:
+            print("cleanup Exception: {0}".format(err))
+            logging.error("cleanup Exception:=%s", err)
+            raise VoucherBusinessException("cleanup Exception: {0}".format(err))
+        else:
+            return df
 
     """################ Data Types Conversion and Cleansing Stage 2 ####################"""
 
@@ -122,33 +136,39 @@ class CustomerVoucher:
             Converting dataframe data types to match data values and Cleansing Stage 2
             :param dataframe for converting its fields and cleansing
         """
-        logging.debug(
-            'Convert data type and masking/replacing incompatible types by null then removing those null values')
-        logging.info('CONVERT_COLUMNS_DATATYPES_&_REMOVING_INCOMPATIBLE_TYPES')
-        df['timestamp'] = self.convert_to_datetime(df['timestamp'])
-        df['country_code'] = self.convert_to_str(df['country_code'])
-        df['last_order_ts'] = self.convert_to_datetime(df['last_order_ts'])
-        df['first_order_ts'] = self.convert_to_datetime(df['first_order_ts'])
-        df['total_orders'] = self.convert_to_numeric(df['total_orders'])
-        df['voucher_amount'] = self.convert_to_numeric(df['voucher_amount'])
-        print(df.head(self.display_first_x_rows))
-        logging.debug(df.head(self.display_first_x_rows))
-        """
-        remove all Null values which was replaced instead of mismatched types "after applying convert_to_numeric"
-        e.g. if total_order was not numeric so its value was replaced with NaN "Null" 
-        """
-        df = df.dropna()
-        # convert to int after removing null and empty values from those files
-        df['total_orders'] = self.convert_to_int(df['total_orders'])
-        df['voucher_amount'] = self.convert_to_int(df['voucher_amount'])
+        try:
+            logging.debug(
+                'Convert data type and masking/replacing incompatible types by null then removing those null values')
+            logging.info('CONVERT_COLUMNS_DATATYPES_&_REMOVING_INCOMPATIBLE_TYPES')
+            df['timestamp'] = self.convert_to_datetime(df['timestamp'])
+            df['country_code'] = self.convert_to_str(df['country_code'])
+            df['last_order_ts'] = self.convert_to_datetime(df['last_order_ts'])
+            df['first_order_ts'] = self.convert_to_datetime(df['first_order_ts'])
+            df['total_orders'] = self.convert_to_numeric(df['total_orders'])
+            df['voucher_amount'] = self.convert_to_numeric(df['voucher_amount'])
+            print(df.head(self.display_first_x_rows))
+            logging.debug(df.head(self.display_first_x_rows))
+            """
+            remove all Null values which was replaced instead of mismatched types "after applying convert_to_numeric"
+            e.g. if total_order was not numeric so its value was replaced with NaN "Null" 
+            """
+            df = df.dropna()
+            # convert to int after removing null and empty values from those files
+            df['total_orders'] = self.convert_to_int(df['total_orders'])
+            df['voucher_amount'] = self.convert_to_int(df['voucher_amount'])
 
-        print(df.shape)
-        logging.info("DATASET_COUNT_AFTER_FORMATING=%s", df.shape)
+            print(df.shape)
+            logging.info("DATASET_COUNT_AFTER_FORMATING=%s", df.shape)
 
-        print(df.info())
-        logging.info(df.info)
+            print(df.info())
+            logging.info(df.info)
 
-        return df
+        except Exception as err:
+            print("adjust_schema_datatypes Exception: {0}".format(err))
+            logging.error("adjust_schema_datatypes Exception:=%s", err)
+            return None
+        else:
+            return df
 
     # helper functions
     def convert_to_numeric(self, dfColumn):
@@ -170,22 +190,29 @@ class CustomerVoucher:
             Displat first x rows of dataframe
             :param dataframe to display
         """
-        logging.debug("DATASET_LATEST_COUNT=%s", df.shape)
-        logging.debug("DISPLAYING_FIRST=%s of the Dataset", self.display_first_x_rows)
+        try:
+            logging.debug("DATASET_LATEST_COUNT=%s", df.shape)
+            logging.debug("DISPLAYING_FIRST=%s of the Dataset", self.display_first_x_rows)
 
-        print(df.info())
-        print(df.head(self.display_first_x_rows))
-        for index, row in df.head(self.display_first_x_rows).iterrows():
-            timestamp = row['timestamp']
-            country_code = row['country_code']
-            last_order_ts = row['last_order_ts']
-            first_order_ts = row['first_order_ts']
-            total_orders = row['total_orders']
-            voucher_amount = row['voucher_amount']
-            print("{0},{1},{2},{3},{4},{5}".format(timestamp, country_code, last_order_ts, first_order_ts, total_orders,
-                                                   voucher_amount))
-            logging.debug("%s,%s,%s,%s,%s,%s", timestamp, country_code, last_order_ts, first_order_ts, total_orders,
-                          voucher_amount)
+            print(df.info())
+            print(df.head(self.display_first_x_rows))
+            for index, row in df.head(self.display_first_x_rows).iterrows():
+                timestamp = row['timestamp']
+                country_code = row['country_code']
+                last_order_ts = row['last_order_ts']
+                first_order_ts = row['first_order_ts']
+                total_orders = row['total_orders']
+                voucher_amount = row['voucher_amount']
+                print("{0},{1},{2},{3},{4},{5}".format(timestamp, country_code, last_order_ts, first_order_ts, total_orders,
+                                                       voucher_amount))
+                logging.debug("%s,%s,%s,%s,%s,%s", timestamp, country_code, last_order_ts, first_order_ts, total_orders,
+                              voucher_amount)
+        except Exception as err:
+            print("display_sample_data Exception: {0}".format(err))
+            logging.error("display_sample_data Exception:=%s", err)
+            raise VoucherBusinessException("Display sample dataframe dataset records failed, Exception: {0}".format(err))
+        else:
+            return df
 
     """############ Validation for data issues ################"""
 
@@ -194,27 +221,34 @@ class CustomerVoucher:
             Validate columns value making sure its free from null and can be converted without errors
             :param dataframe to validate
         """
-        print(df.info)
+        try:
+            print(df.info)
 
-        timestamp = df['timestamp']
-        country_code = df['country_code']
-        last_order_ts = df['last_order_ts']
-        first_order_ts = df['first_order_ts']
-        total_orders = df['total_orders']
-        voucher_amount = df['voucher_amount']
+            timestamp = df['timestamp']
+            country_code = df['country_code']
+            last_order_ts = df['last_order_ts']
+            first_order_ts = df['first_order_ts']
+            total_orders = df['total_orders']
+            voucher_amount = df['voucher_amount']
 
-        print("Validate Column Null Values")
-        logging.info("Validate Column Null Values")
+            print("Validate Column Null Values")
+            logging.info("Validate Column Null Values")
 
-        print(
-            "timestamp=[{0}],country_code=[{1}],last_order_ts=[{2}],first_order_ts=[{3}],total_orders=[{4}],voucher_amount=[{5}]" \
-                .format(timestamp.isnull().values.any(), country_code.isnull().values.any() \
-                        , last_order_ts.isnull().values.any(), first_order_ts.isnull().values.any(), \
-                        total_orders.isnull().values.any(), voucher_amount.isnull().values.any()))
+            print(
+                "timestamp=[{0}],country_code=[{1}],last_order_ts=[{2}],first_order_ts=[{3}],total_orders=[{4}],voucher_amount=[{5}]" \
+                    .format(timestamp.isnull().values.any(), country_code.isnull().values.any() \
+                            , last_order_ts.isnull().values.any(), first_order_ts.isnull().values.any(), \
+                            total_orders.isnull().values.any(), voucher_amount.isnull().values.any()))
 
-        print("Validate Column Simple Datatype conversion")
-        logging.info("Validate Column Simple Datatype conversion")
-        df = df.astype(dtype={"country_code": "string", "total_orders": "int", "voucher_amount": "int"})
+            print("Validate Column Simple Datatype conversion")
+            logging.info("Validate Column Simple Datatype conversion")
+            df = df.astype(dtype={"country_code": "string", "total_orders": "int", "voucher_amount": "int"})
+        except Exception as err:
+            print("validate_data Exception: {0}".format(err))
+            logging.error("validate_data Exception:=%s", err)
+            raise VoucherBusinessException("Validating dataframe dataset null values and datatypes failed, Exception: {0}".format(err))
+        else:
+            return df
 
     """############## Enrich Data with Segments (recency, frequent) #############"""
 
@@ -223,17 +257,23 @@ class CustomerVoucher:
             Adding 2 new columns to dataframe with which are calculated fields for  frequent_segment and recency_segment
             :param dataframe to enrich
         """
-        df['frequent_segment'] = self.convert_to_str(
-            df.apply(lambda row: CommonUtils.get_frequent_segment(CommonUtils, row['total_orders']), axis=1))
-        df['recency_segment'] = self.convert_to_str(
-            df.apply(
-                lambda row: CommonUtils.get_recency_segment(CommonUtils, row['last_order_ts'], row['first_order_ts']),
-                axis=1))
+        try:
+            df['frequent_segment'] = self.convert_to_str(
+                df.apply(lambda row: CommonUtils.get_frequent_segment(CommonUtils, row['total_orders']), axis=1))
+            df['recency_segment'] = self.convert_to_str(
+                df.apply(
+                    lambda row: CommonUtils.get_recency_segment(CommonUtils, row['last_order_ts'], row['first_order_ts']),
+                    axis=1))
 
-        print(df.info())
-        logging.info(df.info)
-        logging.info("DATASET_COUNT=%s", df.shape)
-        return df
+            print(df.info())
+            logging.info(df.info)
+            logging.info("DATASET_COUNT=%s", df.shape)
+        except Exception as err:
+            print("enrich_data_with_segments Exception: {0}".format(err))
+            logging.error("enrich_data_with_segments Exception:=%s", err)
+            raise VoucherBusinessException("Enriching customer transaction dataframe with segments failed, Exception: {0}".format(err))
+        else:
+            return df
 
     """########## Simulate Sample Request - not used ###############"""
 
@@ -270,11 +310,17 @@ class CustomerVoucher:
         """
             Sqlalchemy connection instance initialization, using URL from yaml config file
         """
-        from sqlalchemy import create_engine
-        print("create_engine_url={0}".format(self.dburl))
-        logging.debug("create_engine_url={0}".format(self.dburl))
-        engine = create_engine(self.dburl)
-        return engine
+        try:
+            from sqlalchemy import create_engine
+            print("create_engine_url={0}".format(self.dburl))
+            logging.debug("create_engine_url={0}".format(self.dburl))
+            engine = create_engine(self.dburl)
+        except Exception as err:
+            print("init_con_engine Exception: {0}".format(err))
+            logging.error("init_con_engine Exception:=%s", err)
+            raise VoucherBusinessException("Database initialization failed: {0}".format(err))
+        else:
+            return engine
 
     def persist_df(self, df, engine):
         """
@@ -282,6 +328,8 @@ class CustomerVoucher:
             :param dataframe to save into database
             :param engine is connection instance to connect to mysql database
         """
+        is_succeded = True
+
         try:
             print("create_voucher_db={0},use_voucher_db={1},customer_table={2},db_schemaname={3},select_cust_query={4}"
                   .format(self.create_voucher_db, self.use_voucher_db,
@@ -289,9 +337,9 @@ class CustomerVoucher:
                           self.select_cust_query))
             logging.debug(
                 "create_voucher_db={0},use_voucher_db={1},customer_table={2},db_schemaname={3},select_cust_query={4}"
-                .format(self.create_voucher_db, self.use_voucher_db,
-                        self.customer_table, self.db_schemaname,
-                        self.select_cust_query))
+                    .format(self.create_voucher_db, self.use_voucher_db,
+                            self.customer_table, self.db_schemaname,
+                            self.select_cust_query))
 
             engine.execute(self.create_voucher_db)  # create db
             engine.execute(self.use_voucher_db)
@@ -312,9 +360,19 @@ class CustomerVoucher:
             result = engine.execute(sql)
             for row in result:
                 print(row)
-            return True
-        except OperationalError as e:
-            print(e)
+            is_succeded = False
+        except OperationalError as err:
+            print("persist_df OperationalError: {0}".format(err))
+            logging.error("persist_df OperationalError:%s", err)
+            is_succeded = False
+        except Exception as err:
+            print("persist_df Exception: {0}".format(err))
+            logging.error("persist_df Exception:=%s", err)
+            raise VoucherBusinessException("Customer Transactions saving to database failed: {0}".format(err))
+            is_succeded = False
+        finally:
+            return is_succeded
+
 
     def rank_segments_by_voucher_count(self, engine):
         """
@@ -322,13 +380,19 @@ class CustomerVoucher:
             executing ranking query and saving dataframe into database
             :param engine is connection instance to connect to mysql database and save results
         """
-        # top ranked voucher amount most used per segment
-        query = self.rank_segements_query
-        df = pd.read_sql(query, engine)
+        try:
+            # top ranked voucher amount most used per segment
+            query = self.rank_segements_query
+            df = pd.read_sql(query, engine)
 
-        df.to_sql(self.voucher_table, engine, schema="voucher", if_exists="replace", index=False)
+            df.to_sql(self.voucher_table, engine, schema="voucher", if_exists="replace", index=False)
 
-        print(df)
+            print(df)
+        except Exception as err:
+            print("rank_segments_by_voucher_count Exception: {0}".format(err))
+            logging.error("rank_segments_by_voucher_count Exception:=%s", err)
+            raise VoucherBusinessException(
+                "Query customer transaction segemnts and Saving ranked most used vouchers failed: {0}".format(err))
 
 
 if __name__ == '__main__':
@@ -337,32 +401,38 @@ if __name__ == '__main__':
     is_data_available = custvoucher.download_parquet()
 
     if not is_data_available:
-        logging.debug("Exist Application - Dataset is not avaliable")
-        print("Exist Application - Dataset is not avaliable")
+        logging.debug("Exist Application - Dataset is not available")
+        print("Exist Application - Dataset is not available")
         sys.exit(1)
-    # Read and load Row Data into Dataframe
+
+    # Download, Read and load Row Data into Dataframe
     df = custvoucher.read_parquet(custvoucher.file_url)
+    try:
+        # ---- Data Preparation  ---
 
-    # Data Cleansing Stage 1
-    df = custvoucher.cleanup(df)
+        # Data Cleansing Stage 1
+        df = custvoucher.cleanup(df)
 
-    # Data Types Conversion and Cleansing Stage 2 after conversion
-    df = custvoucher.adjust_schema_datatypes(df)
+        # Data Types Conversion and Cleansing Stage 2 after conversion
+        df = custvoucher.adjust_schema_datatypes(df)
 
-    # Display Sample Data
-    custvoucher.display_sample_data(df)
+        # Display Sample Data
+        custvoucher.display_sample_data(df)
 
-    # Validation for data issues
-    custvoucher.validate_data(df)
+        # Validation for data issues
+        custvoucher.validate_data(df)
 
-    # Enrich Data with Segments (recency, frequent)
-    df = custvoucher.enrich_data_with_segments(df)
+        # Enrich Data with Segments (recency, frequent)
+        df = custvoucher.enrich_data_with_segments(df)
 
-    # ---- Save database into mysql database tables ---
-    dbengine = custvoucher.init_con_engine()
+        # ---- Save database into mysql database tables ---
+        dbengine = custvoucher.init_con_engine()
 
-    # Save data with segments "table: customer_fact"
-    is_saved = custvoucher.persist_df(df, dbengine)
-    if is_saved:
-        # Save ranked segments by voucher count "table: voucher_rank"
-        custvoucher.rank_segments_by_voucher_count(dbengine)
+        # Save data with segments "table: customer_fact"
+        is_saved = custvoucher.persist_df(df, dbengine)
+        if is_saved:
+            # Save ranked segments by voucher count "table: voucher_rank"
+            custvoucher.rank_segments_by_voucher_count(dbengine)
+    except VoucherBusinessException as vbe:
+        print("VoucherBusinessException raised:{0}".format(vbe))
+        logging.error("VoucherBusinessException:%s", vbe)
