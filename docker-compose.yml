@@ -21,18 +21,6 @@ services:
       - db_data:/var/lib/mysql
 #      - "mysql_grant_permission.sql:/docker-entrypoint-initdb.d/1.sql"
 
-  phpmyadmin:
-    container_name: mysql-php-admin
-    depends_on:
-      - mysql_db
-    image: phpmyadmin/phpmyadmin
-    restart: always
-    ports:
-      - 8088:80
-    environment:
-      PMA_HOST: mysql_db
-      MYSQL_ROOT_PASSWORD: 123
-
   voucher_app:
     container_name: voucher-python-app
     build:
