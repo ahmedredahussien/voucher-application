@@ -2,38 +2,46 @@ import logging
 import os
 import sys
 from sqlite3.dbapi2 import OperationalError
+
+import MySQLdb
 import boto3
 
 import pandas as pd
+import sqlalchemy
+
 
 sys.path.insert(1, os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 from config.yaml_config import YamlConfig
+
 from common.common_utils import CommonUtils
+from common.custom_exceptions import CustomVoucherBusinessException, CustomDatabaseException
 
+from sqlalchemy.exc import (OperationalError)
+from sqlalchemy import create_engine
 
-class VoucherBusinessException(Exception):
-    """Exception Raised when there is an error in business logic layer in the implementation """
-
-    def __init__(self, message="Voucher Business Exception"):
-        self.message = message
-        super().__init__(self.message)
 
 
 class CustomerVoucher:
     """################# Initialize variables and logging#######################"""
-
     def __init__(self):
         try:
-            config_dict = YamlConfig.get_config()
-            app_log_file = config_dict["logfile_path"]
+            self.config_dict = YamlConfig.get_config()
+            app_log_file = self.config_dict["logfile_path"]
 
             logging.basicConfig(filename=app_log_file, filemode='w', format='%(name)s - %(levelname)s - %(message)s',
                                 level=logging.DEBUG)
-            self.file_url = config_dict["source_file_path"]
-            self.display_first_x_rows = int(config_dict["display_first_x_rows"])
+            self.source_directory = self.config_dict["source_directory"]
+            self.file_url = self.config_dict["source_file_path"]
 
-            mysql_conf = config_dict["mysql"]
+            self.display_first_x_rows = int(self.config_dict["display_first_x_rows"])
+
+            s3_conf = self.config_dict["s3"]
+            self.bucket_name = s3_conf["bucket_name"]
+            self.bucket_key_file = s3_conf["bucket_key_file"]
+
+            mysql_conf = self.config_dict["mysql"]
             self.dburl = mysql_conf["dburl"]
+            self.dburl_alternative = mysql_conf["dburl_alternative"]
             self.db_schemaname = mysql_conf["db_schemaname"]
             self.create_voucher_db = mysql_conf["create_voucher_db"]
             self.use_voucher_db = mysql_conf["use_voucher_db"]
@@ -64,13 +72,18 @@ class CustomerVoucher:
     """###################### Download, Read and load Row Data into Dataframe ##########################"""
 
     def download_parquet(self):
+        """
+             Accessing the Bucket Name and Key (file path) anonymously in order to download s3 parquet file
+             Bucket Name and Key path are retrieved from yaml config file
+        """
         try:
             print('FILE_PATH_TO_WRITE={0}'.format(self.file_url))
+            # try creating the parent sample_data source directory and ignore if already exists
+            os.makedirs(self.source_directory, exist_ok=True)
 
             s3_client = boto3.client('s3', aws_access_key_id='', aws_secret_access_key='')
             s3_client._request_signer.sign = (lambda *args, **kwargs: None)
-            obj = s3_client.get_object(Bucket='dh-data-chef-hiring-test',
-                                       Key='data-eng/voucher-selector/data.parquet.gzip')
+            obj = s3_client.get_object(Bucket=self.bucket_name, Key=self.bucket_key_file)
             bytes_response = obj['Body'].read()
 
             # write bytes into file
@@ -103,7 +116,8 @@ class CustomerVoucher:
         except Exception as err:
             print("read_parquet Exception: {0}".format(err))
             logging.error("read_parquet Exception:=%s", err)
-            raise VoucherBusinessException("Reading parquet failed from {0} URL, Exception: {1}".format(file_url,err))
+            raise CustomVoucherBusinessException(
+                "Reading parquet failed from {0} URL, Exception: {1}".format(file_url, err))
         else:
             return df
 
@@ -125,7 +139,7 @@ class CustomerVoucher:
         except Exception as err:
             print("cleanup Exception: {0}".format(err))
             logging.error("cleanup Exception:=%s", err)
-            raise VoucherBusinessException("cleanup Exception: {0}".format(err))
+            raise CustomVoucherBusinessException("cleanup Exception: {0}".format(err))
         else:
             return df
 
@@ -146,6 +160,10 @@ class CustomerVoucher:
             df['first_order_ts'] = self.convert_to_datetime(df['first_order_ts'])
             df['total_orders'] = self.convert_to_numeric(df['total_orders'])
             df['voucher_amount'] = self.convert_to_numeric(df['voucher_amount'])
+
+            # df[['timestamp', 'last_order_ts', 'first_order_ts']] = df[['timestamp', 'last_order_ts', 'first_order_ts']].apply(pd.to_timedelta)
+            print(df.dtypes)
+
             print(df.head(self.display_first_x_rows))
             logging.debug(df.head(self.display_first_x_rows))
             """
@@ -156,6 +174,14 @@ class CustomerVoucher:
             # convert to int after removing null and empty values from those files
             df['total_orders'] = self.convert_to_int(df['total_orders'])
             df['voucher_amount'] = self.convert_to_int(df['voucher_amount'])
+
+            # using dictionary to convert specific columns
+            convert_dict = {
+                'country_code': 'str',
+                'total_orders': 'int32',
+                'voucher_amount': 'int32'
+            }
+            # df = df.astype(convert_dict)
 
             print(df.shape)
             logging.info("DATASET_COUNT_AFTER_FORMATING=%s", df.shape)
@@ -194,8 +220,8 @@ class CustomerVoucher:
             logging.debug("DATASET_LATEST_COUNT=%s", df.shape)
             logging.debug("DISPLAYING_FIRST=%s of the Dataset", self.display_first_x_rows)
 
+            print("DISPLAYING_FIRST={0}".format(self.display_first_x_rows))
             print(df.info())
-            print(df.head(self.display_first_x_rows))
             for index, row in df.head(self.display_first_x_rows).iterrows():
                 timestamp = row['timestamp']
                 country_code = row['country_code']
@@ -203,14 +229,16 @@ class CustomerVoucher:
                 first_order_ts = row['first_order_ts']
                 total_orders = row['total_orders']
                 voucher_amount = row['voucher_amount']
-                print("{0},{1},{2},{3},{4},{5}".format(timestamp, country_code, last_order_ts, first_order_ts, total_orders,
+                print("{0},{1},{2},{3},{4},{5}".format(timestamp, country_code, last_order_ts, first_order_ts,
+                                                       total_orders,
                                                        voucher_amount))
                 logging.debug("%s,%s,%s,%s,%s,%s", timestamp, country_code, last_order_ts, first_order_ts, total_orders,
                               voucher_amount)
         except Exception as err:
             print("display_sample_data Exception: {0}".format(err))
             logging.error("display_sample_data Exception:=%s", err)
-            raise VoucherBusinessException("Display sample dataframe dataset records failed, Exception: {0}".format(err))
+            raise CustomVoucherBusinessException(
+                "Display sample dataframe dataset records failed, Exception: {0}".format(err))
         else:
             return df
 
@@ -222,6 +250,7 @@ class CustomerVoucher:
             :param dataframe to validate
         """
         try:
+
             print(df.info)
 
             timestamp = df['timestamp']
@@ -246,7 +275,8 @@ class CustomerVoucher:
         except Exception as err:
             print("validate_data Exception: {0}".format(err))
             logging.error("validate_data Exception:=%s", err)
-            raise VoucherBusinessException("Validating dataframe dataset null values and datatypes failed, Exception: {0}".format(err))
+            raise CustomVoucherBusinessException(
+                "Validating dataframe dataset null values and datatypes failed, Exception: {0}".format(err))
         else:
             return df
 
@@ -257,21 +287,27 @@ class CustomerVoucher:
             Adding 2 new columns to dataframe with which are calculated fields for  frequent_segment and recency_segment
             :param dataframe to enrich
         """
+        custvoucher = CustomerVoucher()
+        commonutils = CommonUtils()
         try:
-            df['frequent_segment'] = self.convert_to_str(
-                df.apply(lambda row: CommonUtils.get_frequent_segment(CommonUtils, row['total_orders']), axis=1))
-            df['recency_segment'] = self.convert_to_str(
-                df.apply(
-                    lambda row: CommonUtils.get_recency_segment(CommonUtils, row['last_order_ts'], row['first_order_ts']),
-                    axis=1))
+            frequent_segment_val = df.apply(lambda row: commonutils.get_frequent_segment(commonutils, row['total_orders']), axis=1)
+            recency_segment_val = df.apply(lambda row: commonutils.get_recency_segment(commonutils, row['last_order_ts'],row['first_order_ts']),axis=1)
+            print(frequent_segment_val)
+            df['frequent_segment'] = str(frequent_segment_val)
+            df['recency_segment'] = str(recency_segment_val)
+
 
             print(df.info())
             logging.info(df.info)
             logging.info("DATASET_COUNT=%s", df.shape)
+
+            print(df.head(custvoucher.display_first_x_rows))
+            logging.info(df.head(custvoucher.display_first_x_rows))
         except Exception as err:
             print("enrich_data_with_segments Exception: {0}".format(err))
             logging.error("enrich_data_with_segments Exception:=%s", err)
-            raise VoucherBusinessException("Enriching customer transaction dataframe with segments failed, Exception: {0}".format(err))
+            raise CustomVoucherBusinessException(
+                "Enriching customer transaction dataframe with segments failed, Exception: {0}".format(err))
         else:
             return df
 
@@ -310,17 +346,38 @@ class CustomerVoucher:
         """
             Sqlalchemy connection instance initialization, using URL from yaml config file
         """
+        is_error = False
+        exception_msg = None
         try:
-            from sqlalchemy import create_engine
-            print("create_engine_url={0}".format(self.dburl))
-            logging.debug("create_engine_url={0}".format(self.dburl))
+            print("initialize_engine_url")
+            logging.debug("initialize_engine_url")
+
             engine = create_engine(self.dburl)
+            engine.connect()
+
+            print("database connection initialized : {0}".format(engine))
+            logging.debug("database connection initialized:=%s", engine)
+
+        except OperationalError as err:
+            is_error = True
+            exception_msg = str(err)
+            print("init_con_engine OperationalError: {0}".format(err))
+            logging.error("init_con_engine OperationalError:=%s", err)
         except Exception as err:
+            is_error = True
+            exception_msg = str(err)
             print("init_con_engine Exception: {0}".format(err))
             logging.error("init_con_engine Exception:=%s", err)
-            raise VoucherBusinessException("Database initialization failed: {0}".format(err))
         else:
+            print("Returned: {0}".format(engine))
+            logging.debug("Returned %s", engine)
+
             return engine
+        finally:
+            if is_error:
+                print("Error Message=" + exception_msg)
+                logging.error("Database initialization failed %s", exception_msg)
+                raise CustomDatabaseException("Database initialization failed: {0}".format(exception_msg))
 
     def persist_df(self, df, engine):
         """
@@ -336,31 +393,32 @@ class CustomerVoucher:
                           self.customer_table, self.db_schemaname,
                           self.select_cust_query))
             logging.debug(
-                "create_voucher_db={0},use_voucher_db={1},customer_table={2},db_schemaname={3},select_cust_query={4}"
-                    .format(self.create_voucher_db, self.use_voucher_db,
-                            self.customer_table, self.db_schemaname,
-                            self.select_cust_query))
+                'create_voucher_db=%s,use_voucher_db=%s,customer_table=%s,db_schemaname=%s,select_cust_query=%s',
+                self.create_voucher_db, self.use_voucher_db,
+                self.customer_table, self.db_schemaname,
+                self.select_cust_query)
 
-            engine.execute(self.create_voucher_db)  # create db
-            engine.execute(self.use_voucher_db)
-            # default
-            # engine = create_engine('mysql://scott:tiger@localhost/foo')
-            # mysql-python
-            # engine = create_engine('mysql+mysqldb://scott:tiger@localhost/foo')
-            # MySQL-connector-python
-            # engine = create_engine('mysql+mysqlconnector://root:tiger@localhost/foo')
-            # engine = create_engine("mysql+pymysql://user:pass@some_mariadb/dbname?charset=utf8mb4")
+            print("Engine Connection={0}".format(engine))
+            logging.debug("Engine Connection=%s", engine)
 
-            # save dataframe into new table, but if already exists will be replaced
-            # (if_exists possible values ='replace','append','fail')
-            df.to_sql(self.customer_table, engine, schema=self.db_schemaname, if_exists="replace", index=False)
+            if not engine:
+                logging.error("Engine Connection is null")
+                print("Engine Connection is null")
 
-            # Fetch/Select sample records
-            sql = self.select_cust_query
-            result = engine.execute(sql)
-            for row in result:
-                print(row)
-            is_succeded = False
+                raise CustomVoucherBusinessException("Saving Customer Transactions with segments to database failed")
+            else:
+                engine.execute(self.create_voucher_db)  # create db
+                engine.execute(self.use_voucher_db)
+
+                # save dataframe into new table, but if already exists will be replaced
+                # (if_exists possible values ='replace','append','fail')
+                df.to_sql(self.customer_table, engine, schema=self.db_schemaname, if_exists="replace", index=False)
+
+                # Fetch/Select sample records
+                sql = self.select_cust_query
+                result = engine.execute(sql)
+                for row in result:
+                    print(row)
         except OperationalError as err:
             print("persist_df OperationalError: {0}".format(err))
             logging.error("persist_df OperationalError:%s", err)
@@ -368,11 +426,10 @@ class CustomerVoucher:
         except Exception as err:
             print("persist_df Exception: {0}".format(err))
             logging.error("persist_df Exception:=%s", err)
-            raise VoucherBusinessException("Customer Transactions saving to database failed: {0}".format(err))
             is_succeded = False
+            raise CustomVoucherBusinessException("Customer Transactions saving to database failed: {0}".format(err))
         finally:
             return is_succeded
-
 
     def rank_segments_by_voucher_count(self, engine):
         """
@@ -391,8 +448,26 @@ class CustomerVoucher:
         except Exception as err:
             print("rank_segments_by_voucher_count Exception: {0}".format(err))
             logging.error("rank_segments_by_voucher_count Exception:=%s", err)
-            raise VoucherBusinessException(
-                "Query customer transaction segemnts and Saving ranked most used vouchers failed: {0}".format(err))
+            raise CustomVoucherBusinessException(
+                "Query customer transaction segments and Saving ranked most used vouchers failed: {0}".format(err))
+
+    def save_db_transaction(self, dbengine):
+        """
+        Not Used - Just for testing purpose
+        Save data with segments "table: customer_fact" and
+        Save ranked segments by voucher count "table: voucher_rank"
+        """
+        from sqlalchemy.orm import Session
+        try:
+            with Session(dbengine) as session:
+                session.add(self.persist_df(df, dbengine))
+                session.add(self.rank_segments_by_voucher_count(dbengine))
+                session.commit()
+                session.flush()
+        except Exception as err:
+            print("Database Transaction Rolledback: {0}".format(err))
+            logging.error("Database Transaction Rolledback: %s", err)
+            session.rollback()
 
 
 if __name__ == '__main__':
@@ -420,19 +495,37 @@ if __name__ == '__main__':
         custvoucher.display_sample_data(df)
 
         # Validation for data issues
-        custvoucher.validate_data(df)
+        # custvoucher.validate_data(df)
 
         # Enrich Data with Segments (recency, frequent)
         df = custvoucher.enrich_data_with_segments(df)
 
         # ---- Save database into mysql database tables ---
-        dbengine = custvoucher.init_con_engine()
+        dbengine = None
+        try:
+            dbengine = custvoucher.init_con_engine()
+        except CustomDatabaseException as err:
+            if ("mysql_db" in err.message):
+                # In case that this code will run locally - Retrying to intialize connection using the localhost ip 127.0.0.1
+                # instead of docker container image database service name mysql_db
+                print("Retry initializing database connection using alternative localhost ip as database url")
+                logging.warning("Retry initializing database connection using alternative localhost ip as database url")
+                custvoucher.dburl = custvoucher.dburl_alternative
+                dbengine = custvoucher.init_con_engine()
+
+        print("dbengine {0}".format(dbengine))
 
         # Save data with segments "table: customer_fact"
         is_saved = custvoucher.persist_df(df, dbengine)
         if is_saved:
             # Save ranked segments by voucher count "table: voucher_rank"
             custvoucher.rank_segments_by_voucher_count(dbengine)
-    except VoucherBusinessException as vbe:
-        print("VoucherBusinessException raised:{0}".format(vbe))
-        logging.error("VoucherBusinessException:%s", vbe)
+    except CustomVoucherBusinessException as vbe:
+        print("VoucherBusinessException raised:{0}".format(vbe.message))
+        logging.error("VoucherBusinessException:%s", vbe.message)
+    except Exception as err:
+        print("Unknown General Exception: {0}".format(err))
+        logging.error("Unknown General Exception:=%s", err)
+    finally:
+        print("Voucher Application Ended")
+
