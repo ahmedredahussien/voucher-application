@@ -1,9 +1,14 @@
 ---
 logfile_path: "app.log"
+source_directory: sample_data
 source_file_path: "sample_data/data.parquet.gzip"
 display_first_x_rows: 8
+s3:
+  bucket_name: dh-data-chef-hiring-test
+  bucket_key_file: "data-eng/voucher-selector/data.parquet.gzip"
 mysql:
   dburl: "mysql://root:123@mysql_db"
+  dburl_alternative: "mysql://root:123@127.0.0.1"
   db_schemaname: "voucher"
   create_voucher_db: "CREATE DATABASE IF NOT EXISTS voucher"
   use_voucher_db: "USE voucher"
