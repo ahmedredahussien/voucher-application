@@ -120,8 +120,10 @@ or
 **Notebook for data preparation and analysis**
 * [You can view the published Google Notebook on google cloud](https://colab.research.google.com/drive/18_c5cS3fHxeIuwoAPH5aCXXawr2V9WUP?usp=sharing)
 
+
 if you need further permission to edit please contact me ahmedredahussien@gmail.com 
 [Back to Top "Table of Contents"](#TOP)
+
 ---
 
 ## Docker and Usage
@@ -129,6 +131,7 @@ To build the docker for the first time and run the application along with the RE
 
 You can download IDE "Integrated development environment" software application like Pycharm Intellij community free edition: **https://www.jetbrains.com/pycharm/download/**   
 You must download docker on you machine to be able to build the images following the installation steps : **https://www.docker.com/products/docker-desktop**
+
 ---
 
 ### Code download
