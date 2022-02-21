@@ -9,6 +9,7 @@ import os, sys
 sys.path.insert(1, os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 from src.main.app.voucher_data_preparation import CustomerVoucher
 
+
 class TestCustomerVoucher(TestCase):
 
     @classmethod
@@ -16,7 +17,8 @@ class TestCustomerVoucher(TestCase):
         # common initialization and declarations run before all test cases at the beginning of unit test - one time only
         print("setUpClass")
         self.customer_voucher = CustomerVoucher()
-        self.patcher = mock.patch('src.main.app.voucher_data_preparation.CustomerVoucher.read_parquet', return_value=sqlalchemy.engine.create)
+        self.patcher = mock.patch('src.main.app.voucher_data_preparation.CustomerVoucher.read_parquet',
+                                  return_value=sqlalchemy.engine.create)
         self.patcher.start()
 
     @classmethod
@@ -28,21 +30,15 @@ class TestCustomerVoucher(TestCase):
         print("test_get_recency_segment_by_days")
 
         with mock.patch('src.main.app.voucher_data_preparation.CustomerVoucher.enrich_data_with_segments',
-                    return_value=self.enricheddf):
-            actual_result = self.customer_voucher.enrich_data_with_segments(self.df)
-
+                        return_value=self.enricheddf):
+            actual_result = self.customer_voucher.enrich_data_with_segments()
 
         expected_value = self.customer_voucher.enrich_data_with_segments(self.df)
-        print("********************************************************")
-        print(self.df)
-        assert_frame_equal(expected_value,actual_result)
-
-    # def test_raises(self):
-    #     with self.assertRaises(ValueError):
-    #         calc.divide(10, 0)
+        assert_frame_equal(expected_value, actual_result)
 
 
-    def convert_str_to_datetime(self,dt):
+
+    def convert_str_to_datetime(self, dt):
         # Convert datetime object to a string representation
         if ":" == dt[-3:-2]:
             dt = dt[:-3] + dt[-2:]
@@ -53,32 +49,27 @@ class TestCustomerVoucher(TestCase):
         # common initialization and declarations run before each test case
         print("setUp")
         self.df = pd.DataFrame({"timestamp": ["2020-05-20 15:24:04.621986+00:00",
-                                              "2020-05-20 15:00:18.431343+00:00","2017-03-20 15:42:38.570961+00:00"],
-                           "country_code": ["Peru", "Peru", "Peru"],
-                           "last_order_ts": [pd.to_datetime("2020-04-19 00:00:00+00:00"),
-                                             pd.to_datetime("2020-04-19 00:00:00+00:00"),
-                                             pd.to_datetime("2020-04-19 00:00:00+00:00")],
-                           "first_order_ts": [pd.to_datetime("2017-07-24 00:00:00+00:00"),
-                                              pd.to_datetime("2020-01-13 00:00:00+00:00"),
-                                              pd.to_datetime("2019-05-21 00:00:00+00:00")],
-                           "total_orders": [2, 27, 10],
-                           "voucher_amount": [2640, 2640, 4400]
-                           })
+                                              "2020-05-20 15:00:18.431343+00:00", "2017-03-20 15:42:38.570961+00:00"],
+                                "country_code": ["Peru", "Peru", "Peru"],
+                                "last_order_ts": [pd.to_datetime("2020-04-19 00:00:00+00:00"),
+                                                  pd.to_datetime("2020-04-19 00:00:00+00:00"),
+                                                  pd.to_datetime("2020-04-19 00:00:00+00:00")],
+                                "first_order_ts": [pd.to_datetime("2017-07-24 00:00:00+00:00"),
+                                                   pd.to_datetime("2020-01-13 00:00:00+00:00"),
+                                                   pd.to_datetime("2019-05-21 00:00:00+00:00")],
+                                "total_orders": [2, 27, 10],
+                                "voucher_amount": [2640, 2640, 4400]
+                                })
 
         # print(self.df)
-        self.enricheddf =  self.df.assign(frequent_segment = ["0-4","13-37","5-13"],
-                                          recency_segment = ["180+","90-120","180+"])
-        print(self.enricheddf)
-        print("===============================================================")
+        self.enricheddf = self.df
+        self.enricheddf["frequent_segment"] = ["0-4", "13-37", "5-13"]
+        self.enricheddf["recency_segment"] = ["180+", "90-120", "180+"]
 
-
-        self.patcher = mock.patch('src.main.app.voucher_data_preparation.CustomerVoucher.read_parquet',return_value=self.df)
+        self.patcher = mock.patch('src.main.app.voucher_data_preparation.CustomerVoucher.read_parquet',
+                                  return_value=self.df)
         self.patcher.start()
 
     def tearDown(self):
         print("tearDown")
-        self.df = None
-        self.enricheddf = None
         self.patcher.stop()
-
-
