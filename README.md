@@ -88,6 +88,7 @@ customers
         * **resources**  : hold all resources like application configuration file
             * **config.yaml** : application yaml configuration file 
     * **test** : holding all unit testing 
+        *
 
 ### For Local Run 
 ```
@@ -103,6 +104,12 @@ or
 - **Execution steps for Voucher Python App**
 
 `` > python3 src\app\voucher_data_preparation.py ``
+
+- **Execution steps for Mock Unit Tests**
+```
+> python3 -m unittest src\test\common\test_common_utils.py
+> python3 -m unittest src\test\app\test_voucher_data_preparation.py
+```
 
 - **Execution steps for FastAPI**
 
@@ -145,11 +152,16 @@ from upper Menu --> VCS -->  Get from Version Control --> copy the github reposi
 ### Docker Images Building
 3. Open command prompt terminal on your machine 
 4. Go to the project parent directory after cloning the application repository 
-5. Run the following command if its the first time, make sure you had stable connection for downloading these artifacts
-``docker compose up --build --remove-orphans``
-6. If you already built the container before run you need to execute only : 
+5. Run the following command if its the first time, make sure you had stable connection for downloading these artifacts **(Recommended)**
+    1. Remove existing containers with the same naming
+    2. Build the 3 images using docker compose command 
+```
+> docker rm mysql-server-container voucher-python-app fastapi-python-app
+> docker compose up --build --remove-orphans
+```
+6. If you already built the container before - just run you need to execute only and start containers without build: 
 ``docker compose up``
-7. If you like to run the docker contain in a detach mode in background (Not recommended option - to be able to the status of the logtrace)
+7. If you would like to run the docker containers in a detach mode "i.e. process in the background" (Not recommended option - to be able to see the status of the logtrace for proof of concept)
 ``docker compose up -d``
 8. Wait until the docker containers starts
     1. mysql-server-container, fastapi-python-app, mysql-php-admin,voucher-python-app)
