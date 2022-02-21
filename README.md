@@ -109,6 +109,7 @@ or
 ```
 > python3 -m unittest src\test\common\test_common_utils.py
 > python3 -m unittest src\test\app\test_voucher_data_preparation.py
+> python3 -m unittest src\test\api\test_voucher_api.py
 ```
 
 - **Execution steps for FastAPI**
